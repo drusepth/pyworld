@@ -2,8 +2,8 @@
 import random as rng
 
 # Display configuration
-MAP_WIDTH = 30
-MAP_HEIGHT = 10
+VISION_WIDTH = 30   # Width of "nearby" 2D map to print out, in tiles
+VISION_HEIGHT = 10  # Height of "nearby" 2D map to print out
 
 # Creature configuration
 CREATURE_X_MOVEMENT_CHANCE = 0.5 # Chance to move left/right (each rolls separately)
@@ -95,6 +95,12 @@ class World:
     self.remove_object(object)
     self.add_object(object, destination)
     object.location = Coordinate(destination.x, destination.y)
+    
+  def objects_at(self, coordinate):
+    # until coordinate comparison lel
+    for coord in self.map.keys():
+      if coord.equals(coordinate):
+        return self.map[coord]
   
   def print(self, center_object, width, height):
     camera_center = center_object.location
@@ -167,6 +173,9 @@ class Creature (Entity):
   def turn(self, world):
     # Do random movement
     self.move_randomly(world)
+    
+    # Interact with stuff
+    # #todo
   
   def move_randomly(self, world):
     # Mutate destination +/- 1 in x/y coordinates to move randomly
@@ -241,7 +250,7 @@ creature.set_location(world, Coordinate(0, 0))
 
 while True:
   world.update()
-  world.print(creature, MAP_WIDTH, MAP_HEIGHT)
+  world.print(creature, VISION_WIDTH, VISION_HEIGHT)
   
   # Let the viewer progress turn-by-turn
   input()
