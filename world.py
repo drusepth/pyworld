@@ -1,47 +1,11 @@
-# Brace for the java
+from coordinate import Coordinate
+from tree import *
+
 import random as rng
 
-# Display configuration
-VISION_WIDTH = 30   # Width of "nearby" 2D map to print out, in tiles
-VISION_HEIGHT = 10  # Height of "nearby" 2D map to print out
-
-# Creature configuration
-CREATURE_X_MOVEMENT_CHANCE = 0.5 # Chance to move left/right (each rolls separately)
-CREATURE_Y_MOVEMENT_CHANCE = 0.5 # Chance to move up/down (each rolls separately)
-CREATURE_MOVEMENT_RATE     = 1   # Number of tiles moved in the chosen direction
-
-# Sapling configuration
-SAPLING_SPAWN_CHANCE       = 0.05 # Chance to spawn on a tile never seen before
-SAPLING_FRAMES_TO_MATURITY = 100  # Point at which this sapling becomes a full-grown tree
-
-# Tree configuration
-TREE_SPAWN_CHANCE     = 0.001  # Chance to spawn a fully-grown tree
-TREE_FRAMES_PER_BLOOM = 50     # Bloom fruit every this-many frames
-TREE_MAX_AGE          = 1000   # Maximum age for a tree before it dies
-
-# Fruit configuration
-FRUIT_AGE_TO_ROT = 30       # Age at which fruit becomes rotten
-FRUIT_AGE_TO_DECOMPOSE = 80 # Age at which fruit disappears into fertilizer
-
-# World Tokens
 EMPTY_SPACE   = '-'
 DEFAULT_TOKEN = '?'
 
-# Entity Tokens
-CREATURE_TOKEN = 'C'
-SAPLING_TOKEN  = 't'
-TREE_TOKEN     = 'T'
-FRUIT_TOKEN    = 'o'
-
-class Coordinate:
-  def __init__(self, x, y):
-    self.x = x
-    self.y = y
-  
-  # todo real overloading of ==
-  def equals(self, other_coordinate):
-    return self.x == other_coordinate.x and self.y == other_coordinate.y
-  
 class World:
   def __init__(self):
     self.map = {}
@@ -102,7 +66,7 @@ class World:
       if coord.equals(coordinate):
         return self.map[coord]
   
-  def print(self, center_object, width, height):
+  def print2d(self, center_object, width, height):
     camera_center = center_object.location
     print ('printing world centered at (', camera_center.x, ',', camera_center.y, ')')
     for y in range(camera_center.y - int(height / 2), 1 + camera_center.y + int(height / 2)):
@@ -140,117 +104,3 @@ class World:
       line = to_print
       
       print(line)
-    
-class Entity:
-  def __init__(self):
-    print('initing entity')
-    self.token = DEFAULT_TOKEN
-    self.age   = 1
-    
-  # todo overload == the real way
-  def equals(self, other):
-    return self.token == other.token and self.location.x == other.location.x and self.location.y == other.location.y
-    
-  def set_location(self, world, coordinate):
-    self.world    = world
-    self.location = coordinate
-    world.add_object(self, coordinate)
-  
-  def get_older(self):
-    self.age += 1
-  
-  def turn(self, world):
-    pass
-
-class Creature (Entity):
-  def __init__(self):
-    self.token = CREATURE_TOKEN
-    
-    # #todo call parent init
-    # remove after super() call
-    self.age = 1
-  
-  def turn(self, world):
-    # Do random movement
-    self.move_randomly(world)
-    
-    # Interact with stuff
-    # #todo
-  
-  def move_randomly(self, world):
-    # Mutate destination +/- 1 in x/y coordinates to move randomly
-    destination = Coordinate(self.location.x, self.location.y)
-    if rng.random() < CREATURE_X_MOVEMENT_CHANCE:
-      destination.x += CREATURE_MOVEMENT_RATE
-    elif rng.random() < CREATURE_X_MOVEMENT_CHANCE:
-      destination.x -= CREATURE_MOVEMENT_RATE
-    
-    if rng.random() < CREATURE_Y_MOVEMENT_CHANCE:
-      destination.y += CREATURE_MOVEMENT_RATE
-    elif rng.random() < CREATURE_Y_MOVEMENT_CHANCE:
-      destination.y -= CREATURE_MOVEMENT_RATE
-
-    world.move_object(self, destination)
-
-class Sapling (Entity):
-  def __init__(self):
-    self.token = SAPLING_TOKEN
-    
-    # remove after super() calls
-    self.age = 1
-  
-  def turn(self, world):
-    # Grow up!
-    if self.age >= SAPLING_FRAMES_TO_MATURITY:
-      # Remove this sapling
-      world.remove_object(self)
-      
-      # And spawn a grown tree in its place
-      Tree().set_location(world, self.location)
-      
-      # todo deconstruct object for memory saving
-    
-class Tree (Entity):
-  def __init__(self):
-    self.token = TREE_TOKEN
-    self.age   = SAPLING_FRAMES_TO_MATURITY # continue age from sapling
-    
-  def turn(self, world):
-    # Aging
-    if self.age > TREE_MAX_AGE:
-      world.remove_object(self) # RIP
-    
-    # Bearing of fruit
-    if self.age % TREE_FRAMES_PER_BLOOM == 0:
-      Fruit().set_location(world, self.location)
-
-class Fruit (Entity):
-  def __init__(self):
-    self.token  = FRUIT_TOKEN
-    self.age    = 1
-    self.rotten = False
-  
-  def turn(self, world):
-    if self.age > FRUIT_AGE_TO_ROT:
-      self.rotten = True
-    
-    if self.age > FRUIT_AGE_TO_DECOMPOSE:
-      world.remove_object(self) # RIP
-      if rng.random() < SAPLING_SPAWN_CHANCE:
-        Sapling().set_location(world, self.location)
-      
-      # todo deconstruct object
-    
-# Main
-world    = World()      # Create an infinite world to live in
-creature = Creature()   # And create a creature to watch in it
-
-# Add the creature to the world at (0, 0)
-creature.set_location(world, Coordinate(0, 0))
-
-while True:
-  world.update()
-  world.print(creature, VISION_WIDTH, VISION_HEIGHT)
-  
-  # Let the viewer progress turn-by-turn
-  input()
